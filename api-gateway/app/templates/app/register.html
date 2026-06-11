@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - PhapShop</title>
+    <link rel="stylesheet" href="{% static 'css/nova.css' %}">
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        body{
+            min-height:100vh;
+            font-family:"Segoe UI",sans-serif;
+            background:linear-gradient(135deg,#0f172a,#1e293b);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            padding:24px;
+        }
+
+        .auth-page{
+            width:100%;
+            max-width:1150px;
+            background:#fff;
+            border-radius:24px;
+            overflow:hidden;
+            display:grid;
+            grid-template-columns:1.2fr 1fr;
+            box-shadow:0 20px 50px rgba(0,0,0,.25);
+        }
+
+        .auth-intro{
+            background:linear-gradient(135deg,#2563eb,#1d4ed8);
+            color:white;
+            padding:60px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        .eyebrow{
+            text-transform:uppercase;
+            letter-spacing:2px;
+            font-size:12px;
+            opacity:.8;
+            margin-bottom:12px;
+        }
+
+        .auth-intro h1{
+            font-size:40px;
+            line-height:1.2;
+            margin-bottom:20px;
+        }
+
+        .auth-intro p{
+            line-height:1.8;
+            opacity:.95;
+        }
+
+        .feature-list{
+            margin-top:30px;
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+        }
+
+        .feature-item{
+            background:rgba(255,255,255,.15);
+            padding:14px 18px;
+            border-radius:12px;
+            backdrop-filter:blur(10px);
+        }
+
+        .auth-card{
+            padding:48px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        .auth-card h2{
+            margin-bottom:24px;
+            color:#0f172a;
+        }
+
+        .form-row{
+            margin-bottom:18px;
+        }
+
+        .form-row label{
+            display:block;
+            margin-bottom:8px;
+            font-weight:600;
+            color:#334155;
+        }
+
+        .input,
+        .select{
+            width:100%;
+            padding:14px 16px;
+            border:1px solid #dbe2ea;
+            border-radius:12px;
+            font-size:15px;
+            transition:.3s;
+        }
+
+        .input:focus,
+        .select:focus{
+            outline:none;
+            border-color:#2563eb;
+            box-shadow:0 0 0 4px rgba(37,99,235,.15);
+        }
+
+        .btn{
+            border:none;
+            cursor:pointer;
+            border-radius:12px;
+            padding:14px;
+            font-size:16px;
+            font-weight:600;
+            transition:.3s;
+        }
+
+        .btn-primary{
+            width:100%;
+            color:white;
+            background:#2563eb;
+        }
+
+        .btn-primary:hover{
+            background:#1d4ed8;
+            transform:translateY(-2px);
+        }
+
+        .notice{
+            padding:12px 14px;
+            border-radius:10px;
+            margin-bottom:18px;
+        }
+
+        .bad{
+            background:#fee2e2;
+            color:#b91c1c;
+        }
+
+        .muted{
+            margin-top:20px;
+            text-align:center;
+            color:#64748b;
+        }
+
+        .muted a{
+            text-decoration:none;
+            color:#2563eb;
+        }
+
+        .muted a:hover{
+            text-decoration:underline;
+        }
+
+        .register-header{
+            margin-bottom:24px;
+        }
+
+        .register-header p{
+            color:#64748b;
+            margin-top:6px;
+        }
+
+        @media (max-width:900px){
+            .auth-page{
+                grid-template-columns:1fr;
+            }
+
+            .auth-intro{
+                padding:40px;
+            }
+
+            .auth-card{
+                padding:32px;
+            }
+
+            .auth-intro h1{
+                font-size:32px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="auth-page">
+
+    <section class="auth-intro">
+
+        <!-- <p class="eyebrow">PhapShop Gateway</p> -->
+
+        <h1>Tạo tài khoản và bắt đầu sử dụng hệ thống</h1>
+
+        <!-- <p>
+            Một biểu mẫu duy nhất dành cho khách hàng và nhân viên.
+            Backend chỉ nhận các trường dữ liệu cần thiết nhằm đảm bảo
+            đăng ký nhanh chóng và chính xác.
+        </p> -->
+
+        <!-- <div class="feature-list">
+            <div class="feature-item">
+                ✓ Hỗ trợ Khách hàng & Nhân viên
+            </div>
+
+            <div class="feature-item">
+                ✓ Quản lý tài khoản tập trung
+            </div>
+
+            <div class="feature-item">
+                ✓ Kết nối trực tiếp với PhapShop API
+            </div>
+        </div> -->
+
+    </section>
+
+    <section class="auth-card">
+
+        <p class="eyebrow">Đăng ký</p>
+
+        <div class="register-header">
+            <h2>Tạo tài khoản mới 🚀</h2>
+            <p>Điền đầy đủ thông tin để tiếp tục.</p>
+        </div>
+
+        {% if error %}
+        <div class="notice bad">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- GIỮ NGUYÊN ENDPOINT -->
+        <form method="post" action="/ui/register/">
+            {% csrf_token %}
+
+            
+
+            <div class="form-row">
+                <label for="full_name">Họ và tên</label>
+                <input
+                    id="full_name"
+                    name="full_name"
+                    class="input"
+                    type="text"
+                    value="{{ full_name }}"
+                    required>
+            </div>
+
+            <div class="form-row">
+                <label for="username">Tên đăng nhập</label>
+                <input
+                    id="username"
+                    name="username"
+                    class="input"
+                    type="text"
+                    value="{{ username }}"
+                    autocomplete="username"
+                    required>
+            </div>
+
+            <div class="form-row">
+                <label for="password">Mật khẩu</label>
+                <input
+                    id="password"
+                    name="password"
+                    class="input"
+                    type="password"
+                    autocomplete="new-password"
+                    required>
+            </div>
+            <div class="form-row">
+                <label for="role">Vai trò</label>
+                <select id="role" name="role" class="select" required>
+                    <option value="CUSTOMER"
+                        {% if role == "CUSTOMER" %}selected{% endif %}>
+                        Khách hàng
+                    </option>
+
+                    <option value="STAFF"
+                        {% if role == "STAFF" %}selected{% endif %}>
+                        Nhân viên
+                    </option>
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit">
+                Tạo tài khoản
+            </button>
+        </form>
+
+        <!-- GIỮ NGUYÊN LINK -->
+        <p class="muted">
+            Đã có tài khoản?
+            <a href="/">
+                <strong>Quay lại đăng nhập</strong>
+            </a>
+        </p>
+
+    </section>
+
+</main>
+
+</body>
+</html>
+```

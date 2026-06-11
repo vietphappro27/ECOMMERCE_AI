@@ -1,0 +1,351 @@
+<!doctype html>
+{% load static %}
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Giỏ hàng - NovaShop</title>
+    <link rel="stylesheet" href="{% static 'css/nova.css' %}" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/ui/customer/"
+            ><strong>NovaShop</strong><span>Cart</span></a
+          >
+          <nav class="nav">
+            <a href="/ui/customer/">Sản phẩm</a>
+            <a class="active" href="/ui/customer/cart/">Giỏ hàng</a>
+            <a href="/ui/customer/orders/">Đơn hàng</a>
+            <a href="/ui/logout/">Đăng xuất</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero cart-hero">
+          <div class="hero-main cart-hero-main">
+            <p class="eyebrow">Giỏ hàng</p>
+            <h1>Rà soát đơn hàng trước khi thanh toán.</h1>
+            <p class="muted cart-hero-copy">
+              Kiểm tra lại số lượng, tổng tiền và thông tin nhận hàng trong một
+              khung nhìn rõ ràng hơn.
+            </p>
+            <div class="cart-highlights">
+              <div class="summary-metric">
+                <span class="muted">Số lượng</span>
+                <strong id="summaryCount">0 sản phẩm</strong>
+              </div>
+              <div class="summary-metric">
+                <span class="muted">Tổng tiền</span>
+                <strong id="summaryTotal">0 ₫</strong>
+              </div>
+            </div>
+          </div>
+          <aside class="panel cart-summary">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Thanh toán</p>
+                <h2>Tóm tắt đơn</h2>
+              </div>
+              <span class="badge badge-soft">COD</span>
+            </div>
+            <div class="summary-note">
+              Chỉ cần nhập địa chỉ, hệ thống sẽ tạo đơn từ các sản phẩm trong
+              giỏ.
+            </div>
+            <div class="form-row">
+              <label for="shipName">Người nhận</label>
+              <input
+                id="shipName"
+                class="input"
+                value="{{ full_name|default:username }}"
+              />
+            </div>
+            <div class="form-row">
+              <label for="shipPhone">Số điện thoại</label>
+              <input
+                id="shipPhone"
+                class="input"
+                placeholder="090..."
+                autocomplete="tel"
+              />
+            </div>
+            <div class="form-row">
+              <label for="shipAddress">Địa chỉ giao hàng</label>
+              <textarea
+                id="shipAddress"
+                class="textarea"
+                placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+              ></textarea>
+            </div>
+            <div class="summary-actions">
+              <button
+                class="btn btn-primary btn-block"
+                type="button"
+                onclick="checkout()"
+              >
+                Tạo đơn hàng
+              </button>
+              <a class="btn btn-block" href="/ui/customer/">
+                Tiếp tục mua sắm
+              </a>
+            </div>
+          </aside>
+        </section>
+
+        <div id="notice" class="notice"></div>
+        <section class="panel cart-list-panel">
+          <div class="cart-list-head">
+            <div>
+              <h2>Danh sách trong giỏ</h2>
+              <p class="muted">
+                Điều chỉnh số lượng hoặc xóa bớt các món chưa cần thiết.
+              </p>
+            </div>
+            <div class="actions cart-toolbar">
+              <button class="btn" onclick="loadCart()">Làm mới</button>
+            </div>
+          </div>
+          <div id="cartContent" class="cart-content">
+            <div class="empty">Đang tải giỏ hàng...</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "/api";
+      const customerId = Number('{{ user_id|default:"0" }}') || 0;
+      let cartItems = [];
+
+      const money = (value) =>
+        new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(Number(value || 0));
+      const esc = (value) =>
+        String(value ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            })[c],
+        );
+
+      function showNotice(message, type = "ok") {
+        const el = document.getElementById("notice");
+        el.textContent = message;
+        el.className = `notice ${type} show`;
+        setTimeout(() => (el.className = "notice"), 3500);
+      }
+
+      function normalizeCart(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload.items)) return payload.items;
+        if (Array.isArray(payload.results)) return payload.results;
+        if (Array.isArray(payload.data)) return payload.data;
+        return [];
+      }
+
+      function itemName(item) {
+        return (
+          item.product_name ||
+          item.name ||
+          `Sản phẩm #${item.product_id || item.item_id}`
+        );
+      }
+
+      function itemPrice(item) {
+        return Number(item.product_price ?? item.price ?? 0);
+      }
+
+      function itemProductId(item) {
+        return Number(item.product_id ?? item.item_id ?? 0);
+      }
+
+      async function loadCart() {
+        try {
+          const res = await fetch(
+            `${API_BASE}/customer/carts/?customer_id=${customerId}`,
+          );
+          const payload = await res.json();
+          cartItems = normalizeCart(payload);
+          renderCart();
+        } catch (error) {
+          document.getElementById("cartContent").innerHTML =
+            '<div class="empty">Không tải được giỏ hàng.</div>';
+          showNotice("Không thể kết nối API giỏ hàng.", "bad");
+        }
+      }
+
+      function renderCart() {
+        const content = document.getElementById("cartContent");
+        if (!cartItems.length) {
+          content.className = "cart-content";
+          content.innerHTML =
+            '<div class="empty empty-cart"><div class="empty-icon">🛒</div><h3>Giỏ hàng đang trống</h3><p>Hãy thêm vài sản phẩm để bắt đầu tạo đơn.</p><a class="btn btn-primary" href="/ui/customer/">Tiếp tục mua sắm</a></div>';
+          updateSummary();
+          return;
+        }
+        content.className = "cart-content";
+        content.innerHTML = `
+          <div class="table-wrap cart-table-wrap">
+            <table class="table cart-table">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>Đơn giá</th>
+                  <th>Số lượng</th>
+                  <th>Thành tiền</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${cartItems
+                  .map((item) => {
+                    const category =
+                      item.product_category || item.item_type || "";
+                    const quantity = Number(item.quantity || 1);
+                    const unitPrice = itemPrice(item);
+                    const rowTotal = unitPrice * quantity;
+                    return `
+                      <tr>
+                        <td>
+                          <div class="cart-item">
+                            <strong class="cart-item-name">${esc(itemName(item))}</strong>
+                            <div class="cart-item-meta">
+                              ${category ? `<span class="badge cart-chip">${esc(category)}</span>` : ""}
+                              <span class="muted">Mã #${esc(itemProductId(item))}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="price">${money(unitPrice)}</span>
+                        </td>
+                        <td>
+                          <div class="qty">
+                            <button type="button" aria-label="Giảm số lượng" onclick="updateQty(${Number(item.id)}, ${quantity - 1})">-</button>
+                            <input value="${quantity}" readonly>
+                            <button type="button" aria-label="Tăng số lượng" onclick="updateQty(${Number(item.id)}, ${quantity + 1})">+</button>
+                          </div>
+                        </td>
+                        <td>
+                          <strong>${money(rowTotal)}</strong>
+                        </td>
+                        <td>
+                          <button class="btn btn-danger btn-small" type="button" onclick="removeItem(${Number(item.id)})">Xóa</button>
+                        </td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+            `;
+        updateSummary();
+      }
+
+      function updateSummary() {
+        const count = cartItems.reduce(
+          (sum, item) => sum + Number(item.quantity || 0),
+          0,
+        );
+        const total = cartItems.reduce(
+          (sum, item) => sum + itemPrice(item) * Number(item.quantity || 0),
+          0,
+        );
+        document.getElementById("summaryCount").textContent =
+          `${count} sản phẩm`;
+        document.getElementById("summaryTotal").textContent = money(total);
+      }
+
+      async function updateQty(cartId, quantity) {
+        if (quantity < 1) {
+          await removeItem(cartId);
+          return;
+        }
+        try {
+          const res = await fetch(
+            `${API_BASE}/customer/cart-items/${cartId}/`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ quantity }),
+            },
+          );
+          if (!res.ok) throw new Error("update failed");
+          await loadCart();
+        } catch (error) {
+          showNotice("Không thể cập nhật số lượng.", "bad");
+        }
+      }
+
+      async function removeItem(cartId) {
+        if (!confirm("Xóa sản phẩm này khỏi giỏ hàng?")) return;
+        try {
+          const res = await fetch(
+            `${API_BASE}/customer/cart-items/${cartId}/`,
+            { method: "DELETE" },
+          );
+          if (!res.ok) throw new Error("delete failed");
+          showNotice("Đã xóa sản phẩm khỏi giỏ hàng.");
+          await loadCart();
+        } catch (error) {
+          showNotice("Không thể xóa sản phẩm.", "bad");
+        }
+      }
+
+      async function checkout() {
+        if (!cartItems.length) {
+          showNotice("Giỏ hàng đang trống.", "bad");
+          return;
+        }
+        const addressLine = document.getElementById("shipAddress").value.trim();
+        if (!addressLine) {
+          showNotice("Vui lòng nhập địa chỉ giao hàng.", "bad");
+          return;
+        }
+        try {
+          const res = await fetch(`${API_BASE}/orders/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customer_id: customerId,
+              payment_method: "cod",
+              payment_status: "pending",
+              shipping_address: {
+                full_name: document.getElementById("shipName").value.trim(),
+                phone: document.getElementById("shipPhone").value.trim(),
+                line1: addressLine,
+                country: "Vietnam",
+              },
+              items: cartItems.map((item) => ({
+                product_id: itemProductId(item),
+                quantity: Number(item.quantity || 1),
+                unit_price: itemPrice(item),
+              })),
+            }),
+          });
+          const payload = await res.json();
+          if (!res.ok) throw new Error(payload.error || "checkout failed");
+          showNotice("Đã tạo đơn hàng thành công.");
+          setTimeout(
+            () => (window.location.href = "/ui/customer/orders/"),
+            700,
+          );
+        } catch (error) {
+          showNotice(error.message || "Không thể tạo đơn hàng.", "bad");
+        }
+      }
+
+      window.addEventListener("load", loadCart);
+    </script>
+  </body>
+</html>

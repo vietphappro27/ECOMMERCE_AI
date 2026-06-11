@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhân viên - NovaShop</title>
+    <link rel="stylesheet" href="{% static 'css/nova.css' %}">
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="topbar-inner">
+                <a class="brand" href="/ui/staff/"><strong>NovaShop</strong><span>Staff workspace</span></a>
+                <nav class="nav">
+                    <a class="active" href="/ui/staff/">Sản phẩm</a>
+                    <a href="/ui/logout/">Đăng xuất</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="page">
+            <section class="hero">
+                <div class="hero-main">
+                    <p class="eyebrow">Xin chào {{ full_name|default:username }}</p>
+                    <h1>Quản lý sản phẩm, kho và thuộc tính danh mục.</h1>
+                    <p class="muted">Trang này dùng API thật: `/api/staff/items/`, `/api/staff/items/<id>/` và `/api/staff/item-attributes/`.</p>
+                </div>
+                <aside class="panel">
+                    <h2>Thao tác nhanh</h2>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="resetForm()">Tạo sản phẩm mới</button>
+                    <button class="btn" style="width: 100%; margin-top: 10px;" onclick="loadProducts()">Làm mới danh sách</button>
+                </aside>
+            </section>
+
+            <div id="notice" class="notice"></div>
+            <section class="layout-2">
+                <div class="panel">
+                    <h2>Danh sách sản phẩm</h2>
+                    <div class="toolbar">
+                        <input id="searchInput" class="input" type="search" placeholder="Tìm theo tên hoặc danh mục">
+                        <select id="categoryFilter" class="select"><option value="">Tất cả danh mục</option></select>
+                        <button class="btn" onclick="applyFilters()">Lọc</button>
+                    </div>
+                    <div id="productsTable" class="table-wrap">
+                        <div class="empty">Đang tải sản phẩm...</div>
+                    </div>
+                </div>
+
+                <aside class="panel">
+                    <h2 id="formTitle">Tạo sản phẩm</h2>
+                    <input id="productId" type="hidden">
+                    <div class="form-row">
+                        <label for="name">Tên sản phẩm</label>
+                        <input id="name" class="input" type="text">
+                    </div>
+                    <div class="form-row">
+                        <label for="category">Danh mục</label>
+                        <select id="category" class="select">
+                            <option value="">Đang tải danh mục...</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="image">URL ảnh</label>
+                        <input id="image" class="input" type="url" placeholder="https://...">
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label for="price">Giá</label>
+                            <input id="price" class="input" type="number" min="0" value="0">
+                        </div>
+                        <div class="form-row">
+                            <label for="stock">Kho</label>
+                            <input id="stock" class="input" type="number" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="description">Mô tả</label>
+                        <textarea id="description" class="textarea"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label>Thuộc tính theo danh mục</label>
+                        <div id="attributeBox" class="muted">Chọn danh mục rồi bấm "Lấy schema".</div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn" onclick="loadAttributes()">Lấy schema</button>
+                        <button class="btn btn-primary" onclick="saveProduct()">Lưu sản phẩm</button>
+                        <button class="btn btn-danger" onclick="resetForm()">Hủy</button>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const MODEL_CATEGORY_KEYS = new Set([
+            'furniture',
+            'book',
+            'electronic',
+            'food',
+            'cosmetic',
+            'sport',
+            'fashion',
+            'toy',
+            'vehicle'
+        ]);
+        let products = [];
+        let categories = [];
+        let attributeNames = [];
+
+        const money = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value || 0));
+        const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+        function showNotice(message, type = 'ok') {
+            const el = document.getElementById('notice');
+            el.textContent = message;
+            el.className = `notice ${type} show`;
+            setTimeout(() => el.className = 'notice', 3500);
+        }
+
+        function normalizeProducts(payload) {
+            if (Array.isArray(payload)) return payload;
+            if (Array.isArray(payload.results)) return payload.results;
+            if (Array.isArray(payload.data)) return payload.data;
+            if (Array.isArray(payload.items)) return payload.items;
+            return [];
+        }
+
+        function normalizeCategories(payload) {
+            if (Array.isArray(payload)) return payload;
+            if (Array.isArray(payload.results)) return payload.results;
+            if (Array.isArray(payload.data)) return payload.data;
+            if (Array.isArray(payload.items)) return payload.items;
+            return [];
+        }
+
+        function categoryById(id) {
+            return categories.find((category) => Number(category.id) === Number(id));
+        }
+
+        function categoryKey(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function modelBackedCategories() {
+            return categories.filter((category) => MODEL_CATEGORY_KEYS.has(categoryKey(category.name)));
+        }
+
+        function categoryOf(product) {
+            if (product.category_name) return product.category_name;
+            if (product.item_type) return product.item_type;
+            const matched = categoryById(product.category);
+            return matched?.name || product.category || 'Khác';
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_BASE}/categories/`);
+                const payload = await res.json();
+                categories = normalizeCategories(payload)
+                    .filter((category) => category && category.id && category.name)
+                    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'vi'));
+                renderCategorySelect();
+                renderCategoryFilter();
+            } catch (error) {
+                categories = [];
+                renderCategorySelect();
+                showNotice('Không tải được danh mục sản phẩm.', 'bad');
+            }
+        }
+
+        function renderCategorySelect() {
+            const select = document.getElementById('category');
+            const current = select.value;
+            const options = modelBackedCategories();
+            select.innerHTML = '<option value="">Chọn danh mục theo model</option>' + options
+                .map((category) => `<option value="${Number(category.id)}">${esc(category.name)}</option>`)
+                .join('');
+            if (current && options.some((category) => Number(category.id) === Number(current))) {
+                select.value = current;
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/staff/items/`);
+                const payload = await res.json();
+                products = normalizeProducts(payload);
+                renderCategoryFilter();
+                renderProducts(products);
+            } catch (error) {
+                document.getElementById('productsTable').innerHTML = '<div class="empty">Không tải được sản phẩm.</div>';
+            }
+        }
+
+        function renderCategoryFilter() {
+            const select = document.getElementById('categoryFilter');
+            const categoryNames = [...new Set(products.map(categoryOf).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'vi'));
+            select.innerHTML = '<option value="">Tất cả danh mục</option>' + categoryNames.map((cat) => `<option value="${esc(cat)}">${esc(cat)}</option>`).join('');
+        }
+
+        function renderProducts(rows) {
+            const box = document.getElementById('productsTable');
+            if (!rows.length) {
+                box.className = '';
+                box.innerHTML = '<div class="empty">Không có sản phẩm.</div>';
+                return;
+            }
+            box.className = 'table-wrap';
+            box.innerHTML = `
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Tên</th><th>Ảnh</th><th>Danh mục</th><th>Giá</th><th>Kho</th><th></th></tr></thead>
+                    <tbody>
+                        ${rows.map((p) => `
+                            <tr>
+                                <td>${Number(p.id)}</td>
+                                <td><strong>${esc(p.name)}</strong></td>
+                                <td>${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;">` : ''}</td>
+                                <td>${esc(categoryOf(p))}</td>
+                                <td>${money(p.price)}</td>
+                                <td><span class="badge ${Number(p.stock || 0) > 0 ? 'badge-ok' : 'badge-bad'}">${Number(p.stock || 0)}</span></td>
+                                <td>
+                                    <button class="btn btn-small" onclick="editProduct(${Number(p.id)})">Sửa</button>
+                                    <button class="btn btn-danger btn-small" onclick="deleteProduct(${Number(p.id)})">Xóa</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            const cat = document.getElementById('categoryFilter').value;
+            renderProducts(products.filter((p) => {
+                const text = `${p.name || ''} ${categoryOf(p)}`.toLowerCase();
+                return (!q || text.includes(q)) && (!cat || categoryOf(p) === cat);
+            }));
+        }
+
+        function detailsOf(product) {
+            if (product.details && typeof product.details === 'object') return product.details;
+            if (product.product_details && typeof product.product_details === 'object') return product.product_details;
+            if (product.description) return { description: product.description };
+            return {};
+        }
+
+        async function loadAttributes() {
+            const category = document.getElementById('category').value.trim();
+            if (!category) {
+                showNotice('Chọn danh mục trước khi lấy schema.', 'bad');
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/staff/item-attributes/?category=${encodeURIComponent(category)}`);
+                const payload = await res.json();
+                const attrs = Array.isArray(payload.attributes) ? payload.attributes : [];
+                attributeNames = attrs.map((item) => item.name).filter(Boolean);
+                document.getElementById('attributeBox').innerHTML = attrs.length
+                    ? attrs.map((item) => `
+                        <div class="form-row">
+                            <label for="attr_${esc(item.name)}">${esc(item.label || item.name)}</label>
+                            <input id="attr_${esc(item.name)}" class="input" type="text" ${item.is_required ? 'required' : ''}>
+                        </div>
+                    `).join('')
+                    : 'Danh mục này chưa có schema thuộc tính.';
+            } catch (error) {
+                showNotice('Không lấy được schema thuộc tính.', 'bad');
+            }
+        }
+
+        function editProduct(id) {
+            const product = products.find((p) => Number(p.id) === Number(id));
+            if (!product) return;
+            document.getElementById('formTitle').textContent = `Sửa sản phẩm #${id}`;
+            document.getElementById('productId').value = id;
+            document.getElementById('name').value = product.name || '';
+            document.getElementById('category').value = product.category || '';
+            document.getElementById('image').value = product.image || '';
+            document.getElementById('price').value = Number(product.price || 0);
+            document.getElementById('stock').value = Number(product.stock || 0);
+            document.getElementById('description').value = product.description || '';
+            const details = detailsOf(product);
+            document.getElementById('attributeBox').innerHTML = Object.keys(details).length
+                ? Object.entries(details).map(([k, v]) => `
+                    <div class="form-row">
+                        <label for="attr_${esc(k)}">${esc(k)}</label>
+                        <input id="attr_${esc(k)}" class="input" type="text" value="${esc(v)}">
+                    </div>
+                `).join('')
+                : 'Sản phẩm chưa có thuộc tính chi tiết.';
+            attributeNames = Object.keys(details);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function collectPayload() {
+            const details = {};
+            for (const name of attributeNames) {
+                const el = document.getElementById(`attr_${name}`);
+                if (el && el.value.trim()) details[name] = el.value.trim();
+            }
+            const description = document.getElementById('description').value.trim();
+            if (description) details.description = description;
+            return {
+                name: document.getElementById('name').value.trim(),
+                category: Number(document.getElementById('category').value || 0),
+                image: document.getElementById('image').value.trim(),
+                price: Number(document.getElementById('price').value || 0),
+                stock: Number(document.getElementById('stock').value || 0),
+                description,
+                details
+            };
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('productId').value;
+            const payload = collectPayload();
+            if (!payload.name || !payload.category) {
+                showNotice('Tên sản phẩm và danh mục là bắt buộc.', 'bad');
+                return;
+            }
+            try {
+                const res = await fetch(id ? `${API_BASE}/staff/items/${id}/` : `${API_BASE}/staff/items/`, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'save failed');
+                showNotice(id ? 'Đã cập nhật sản phẩm.' : 'Đã tạo sản phẩm.');
+                resetForm();
+                loadProducts();
+            } catch (error) {
+                showNotice(error.message || 'Không lưu được sản phẩm.', 'bad');
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm(`Xóa sản phẩm #${id}?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/staff/items/${id}/`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('delete failed');
+                showNotice('Đã xóa sản phẩm.');
+                loadProducts();
+            } catch (error) {
+                showNotice('Không thể xóa sản phẩm.', 'bad');
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('formTitle').textContent = 'Tạo sản phẩm';
+            document.getElementById('productId').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('image').value = '';
+            document.getElementById('price').value = '0';
+            document.getElementById('stock').value = '0';
+            document.getElementById('description').value = '';
+            document.getElementById('attributeBox').textContent = 'Chọn danh mục rồi bấm "Lấy schema".';
+            attributeNames = [];
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') applyFilters();
+        });
+        document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+        document.getElementById('category').addEventListener('change', loadAttributes);
+        window.addEventListener('load', async () => {
+            await loadCategories();
+            await loadProducts();
+        });
+    </script>
+</body>
+</html>
