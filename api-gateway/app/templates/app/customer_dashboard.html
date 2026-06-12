@@ -4,68 +4,662 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Khách hàng - NovaShop</title>
+    <title>Khách hàng - PhapShop</title>
     <link rel="stylesheet" href="{% static 'css/nova.css' %}" />
+    <style>
+      /* ── Customer Dashboard Custom Styles ── */
+      :root {
+        --shop-blue: #2563eb;
+        --shop-blue-dark: #1d4ed8;
+        --shop-indigo: #4338ca;
+        --shop-purple: #7c3aed;
+        --shop-gradient: linear-gradient(
+          135deg,
+          #1e40af 0%,
+          #2563eb 50%,
+          #0ea5e9 100%
+        );
+        --card-radius: 14px;
+      }
+
+      /* ── Topbar ── */
+      .topbar {
+        background: var(--shop-gradient) !important;
+        border-bottom: none !important;
+        backdrop-filter: none !important;
+      }
+      .brand strong {
+        color: #fff;
+        font-size: 1.15rem;
+        letter-spacing: -0.02em;
+      }
+      .brand span {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.78rem;
+      }
+      .nav a {
+        color: rgba(255, 255, 255, 0.75) !important;
+        border-radius: 8px;
+        transition:
+          background 0.2s,
+          color 0.2s;
+        font-size: 0.88rem;
+      }
+      .nav a:hover,
+      .nav a.active {
+        background: rgba(255, 255, 255, 0.18) !important;
+        color: #fff !important;
+      }
+      .nav a.active {
+        font-weight: 800;
+      }
+
+      /* ── Page ── */
+      .page {
+        padding-top: 0;
+      }
+
+      /* ── Hero Banner ── */
+      .customer-hero {
+        background: var(--shop-gradient);
+        padding: 40px 0 70px;
+        position: relative;
+        overflow: hidden;
+      }
+      .customer-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      .customer-hero::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: var(--bg);
+        clip-path: ellipse(55% 100% at 50% 100%);
+      }
+      .hero-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .hero-greeting {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      .hero-title {
+        color: #fff;
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 900;
+        margin: 0 0 10px;
+        line-height: 1.15;
+      }
+      .hero-sub {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin: 0;
+        max-width: 460px;
+      }
+      .hero-search {
+        display: flex;
+        gap: 8px;
+        margin-top: 20px;
+        max-width: 540px;
+      }
+      .hero-search input {
+        flex: 1;
+        border: none;
+        border-radius: 50px;
+        padding: 13px 20px;
+        font-size: 0.93rem;
+        outline: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      .hero-search input:focus {
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+      }
+      .hero-search select {
+        border: none;
+        border-radius: 50px;
+        padding: 12px 16px;
+        font-size: 0.88rem;
+        background: rgba(255, 255, 255, 0.95);
+        outline: none;
+        cursor: pointer;
+        min-width: 130px;
+      }
+      .hero-search .btn-search {
+        background: #fff;
+        color: var(--shop-blue);
+        border: none;
+        border-radius: 50px;
+        padding: 12px 22px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      }
+      .hero-search .btn-search:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+      .hero-stats {
+        display: flex;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      .hero-stat {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 16px 20px;
+        text-align: center;
+        backdrop-filter: blur(8px);
+        min-width: 90px;
+      }
+      .hero-stat strong {
+        display: block;
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .hero-stat span {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: block;
+        margin-top: 4px;
+      }
+
+      /* ── Main content ── */
+      .main-content {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px 60px;
+      }
+
+      /* ── Section headers ── */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        gap: 12px;
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title h2 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+      }
+      .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+      }
+      .section-icon.blue {
+        background: #dbeafe;
+      }
+      .section-icon.purple {
+        background: #ede9fe;
+      }
+      .product-count {
+        background: #f1f5f9;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 3px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+      .section-divider {
+        height: 2px;
+        background: linear-gradient(90deg, #dbeafe 0%, transparent 100%);
+        border-radius: 2px;
+        margin-bottom: 20px;
+      }
+
+      /* ── Product grid ── */
+      .products-section {
+        margin-top: 32px;
+      }
+      .ai-section {
+        margin-top: 36px;
+      }
+
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 18px;
+      }
+
+      /* ── Product card ── */
+      .prod-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: var(--card-radius);
+        overflow: hidden;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+      }
+      .prod-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 36px rgba(22, 32, 51, 0.12);
+      }
+      .prod-thumb {
+        height: 168px;
+        background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+      .prod-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+      }
+      .prod-card:hover .prod-thumb img {
+        transform: scale(1.05);
+      }
+      .prod-thumb-letter {
+        font-size: 2.4rem;
+        font-weight: 900;
+        color: var(--shop-blue);
+        opacity: 0.5;
+      }
+      .prod-badge-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+      }
+      .ai-badge {
+        background: linear-gradient(135deg, #7c3aed, #4338ca);
+        color: #fff;
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .prod-body {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        gap: 4px;
+      }
+      .prod-cat {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--shop-blue);
+        margin-bottom: 2px;
+      }
+      .prod-name {
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .prod-desc {
+        font-size: 0.78rem;
+        color: var(--muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+        margin-top: 2px;
+      }
+      .prod-reason {
+        font-size: 0.75rem;
+        color: #7c3aed;
+        background: #f5f3ff;
+        border-radius: 6px;
+        padding: 4px 8px;
+        margin-top: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .prod-footer {
+        padding: 12px 14px 14px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: auto;
+      }
+      .prod-price {
+        font-size: 1rem;
+        font-weight: 900;
+        color: var(--shop-blue);
+      }
+      .stock-pill {
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+      .stock-pill.high {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .stock-pill.low {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .stock-pill.out {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+      .prod-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        padding: 0 14px 14px;
+      }
+      .btn-detail {
+        border: 1px solid var(--line);
+        background: #f8fafc;
+        color: var(--text);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
+        text-align: center;
+      }
+      .btn-detail:hover {
+        background: #f0f4ff;
+        border-color: #c7d2fe;
+        color: var(--shop-indigo);
+      }
+      .btn-add {
+        background: var(--shop-gradient);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        text-align: center;
+      }
+      .btn-add:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+      .btn-add:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* ── Empty state ── */
+      .grid-empty {
+        grid-column: 1 / -1;
+        padding: 56px 20px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .grid-empty .empty-icon {
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+      }
+      .grid-empty p {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+
+      /* ── Toast ── */
+      .toast {
+        display: none;
+        position: fixed;
+        bottom: 100px;
+        right: 28px;
+        z-index: 50;
+        min-width: 260px;
+        max-width: 360px;
+        padding: 13px 18px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        box-shadow: 0 8px 32px rgba(22, 32, 51, 0.18);
+        align-items: center;
+        gap: 10px;
+      }
+      .toast.show {
+        display: flex;
+        animation: toastIn 0.25s ease;
+      }
+      .toast.ok {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+      }
+      .toast.bad {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── Chat FAB upgrade ── */
+      .chat-fab {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+      }
+      .chat-fab:hover {
+        transform: scale(1.06);
+      }
+      .chat-box {
+        border-radius: 16px;
+      }
+      .chat-head {
+        background: linear-gradient(135deg, #1e40af, #4338ca);
+      }
+      .chat-head strong {
+        color: #fff;
+      }
+      .chat-head span {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .chat-head button {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .hero-stats {
+          display: none;
+        }
+        .hero-search {
+          flex-direction: column;
+          max-width: 100%;
+        }
+        .hero-search select {
+          min-width: unset;
+        }
+        .product-grid {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 12px;
+        }
+        .prod-thumb {
+          height: 140px;
+        }
+        .customer-hero {
+          padding: 28px 0 60px;
+        }
+      }
+      @media (max-width: 480px) {
+        .product-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
+      <!-- ── Topbar ── -->
       <header class="topbar">
         <div class="topbar-inner">
-          <a class="brand" href="/ui/customer/"
-            ><strong>NovaShop</strong><span>Customer workspace</span></a
-          >
+          <a class="brand" href="/ui/customer/">
+            <strong>⚡ PhapShop</strong>
+            <span>Customer</span>
+          </a>
           <nav class="nav">
-            <a class="active" href="/ui/customer/">Sản phẩm</a>
-            <a href="/ui/customer/cart/">Giỏ hàng</a>
-            <a href="/ui/customer/orders/">Đơn hàng</a>
+            <a class="active" href="/ui/customer/">🛍 Sản phẩm</a>
+            <a href="/ui/customer/cart/">🛒 Giỏ hàng</a>
+            <a href="/ui/customer/orders/">📦 Đơn hàng</a>
             <a href="/ui/logout/">Đăng xuất</a>
           </nav>
         </div>
       </header>
 
-      <main class="page">
-        <section class="hero">
-          <div class="hero-main">
-            <p class="eyebrow">Xin chào {{ full_name|default:username }}</p>
-            <!-- <h1>Mua sắm và nhận gợi ý sản phẩm phù hợp với bạn.</h1>
-            <p class="muted">
-              Tìm kiếm, xem chi tiết, thêm giỏ hàng và thanh toán trực tiếp qua
-              hệ thống API thật.
-            </p> -->
+      <!-- ── Hero banner ── -->
+      <div class="customer-hero">
+        <div class="hero-inner">
+          <div>
+            <p class="hero-greeting">
+              👋 Xin chào, {{ full_name|default:username }}
+            </p>
+            <h1 class="hero-title">Khám phá sản phẩm<br />dành cho bạn</h1>
+            <p class="hero-sub">
+              Tìm kiếm, so sánh và mua sắm hàng ngàn sản phẩm với gợi ý AI cá
+              nhân hoá.
+            </p>
+            <div class="hero-search">
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="🔍  Tìm sản phẩm…"
+              />
+              <select id="categorySelect">
+                <option value="">Tất cả danh mục</option>
+              </select>
+              <button class="btn-search" onclick="applyFilters()">
+                Tìm kiếm
+              </button>
+            </div>
           </div>
-        </section>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong id="heroTotal">—</strong>
+              <span>Sản phẩm</span>
+            </div>
+            <div class="hero-stat">
+              <strong id="heroCats">—</strong>
+              <span>Danh mục</span>
+            </div>
+            <div class="hero-stat">
+              <strong>AI</strong>
+              <span>Gợi ý</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div id="notice" class="notice"></div>
+      <!-- ── Main content ── -->
+      <main class="main-content">
+        <!-- Products section -->
+        <div class="products-section">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon blue">🛍</div>
+              <h2>Tất cả sản phẩm</h2>
+            </div>
+            <span class="product-count" id="productCount">Đang tải…</span>
+          </div>
+          <div class="section-divider"></div>
+          <div id="productsGrid" class="product-grid">
+            <div class="grid-empty">
+              <div class="empty-icon">⏳</div>
+              <p>Đang tải sản phẩm…</p>
+            </div>
+          </div>
+        </div>
 
-        <section class="panel">
-          <h2>Tìm sản phẩm</h2>
-          <div class="toolbar">
-            <input
-              id="searchInput"
-              class="input"
-              type="search"
-              placeholder="Nhập tên sản phẩm hoặc mô tả"
-            />
-            <select id="categorySelect" class="select">
-              <option value="">Tất cả danh mục</option>
-            </select>
-            <button class="btn btn-primary" onclick="applyFilters()">
-              Tìm
-            </button>
+        <!-- AI Recommendations section -->
+        <div class="ai-section">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon purple">✨</div>
+              <h2>Gợi ý AI dành riêng cho bạn</h2>
+            </div>
+            <span
+              class="product-count"
+              style="background: #f5f3ff; color: #7c3aed"
+              >Powered by AI</span
+            >
           </div>
-          <div id="productsGrid" class="grid">
-            <div class="empty">Đang tải sản phẩm...</div>
+          <div
+            class="section-divider"
+            style="
+              background: linear-gradient(90deg, #ede9fe 0%, transparent 100%);
+            "
+          ></div>
+          <div id="recommendations" class="product-grid">
+            <div class="grid-empty">
+              <div class="empty-icon">✨</div>
+              <p>Đang tải gợi ý cá nhân hoá…</p>
+            </div>
           </div>
-        </section>
-
-        <section class="panel" style="margin-top: 18px">
-          <h2>Gợi ý AI</h2>
-          <div id="recommendations" class="grid">
-            <div class="empty">Đang tải gợi ý phù hợp...</div>
-          </div>
-        </section>
+        </div>
       </main>
 
+      <!-- ── Chat FAB ── -->
       <button
         class="chat-fab"
         type="button"
@@ -89,10 +683,12 @@
           />
         </svg>
       </button>
+
+      <!-- ── Chat box ── -->
       <aside id="chatBox" class="chat-box" aria-live="polite">
         <div class="chat-head">
           <div>
-            <strong>NovaBot</strong>
+            <strong>NovaBot ✨</strong>
             <span>Gợi ý sản phẩm theo nhu cầu</span>
           </div>
           <button
@@ -104,17 +700,25 @@
           </button>
         </div>
         <div id="chatMessages" class="chat-messages">
-          <div class="chat-bubble bot">Bạn cần tìm sản phẩm nào?</div>
+          <div class="chat-bubble bot">
+            Xin chào! Bạn đang tìm sản phẩm gì? 🛍
+          </div>
         </div>
         <div class="chat-compose">
           <input
             id="chatMessage"
             class="input"
-            placeholder="Ví dụ: Tôi muốn laptop dưới 15 triệu"
+            placeholder="Ví dụ: Laptop dưới 15 triệu…"
           />
           <button class="btn btn-primary" onclick="sendChat()">Gửi</button>
         </div>
       </aside>
+    </div>
+
+    <!-- ── Toast ── -->
+    <div id="toast" class="toast">
+      <span id="toastIcon"></span>
+      <span id="toastMsg"></span>
     </div>
 
     <script>
@@ -122,13 +726,13 @@
       const customerId = Number('{{ user_id|default:"0" }}') || 0;
       let allProducts = [];
 
-      const money = (value) =>
+      const money = (v) =>
         new Intl.NumberFormat("vi-VN", {
           style: "currency",
           currency: "VND",
-        }).format(Number(value || 0));
-      const esc = (value) =>
-        String(value ?? "").replace(
+        }).format(Number(v || 0));
+      const esc = (v) =>
+        String(v ?? "").replace(
           /[&<>"']/g,
           (c) =>
             ({
@@ -141,10 +745,15 @@
         );
 
       function showNotice(message, type = "ok") {
-        const el = document.getElementById("notice");
-        el.textContent = message;
-        el.className = `notice ${type} show`;
-        setTimeout(() => (el.className = "notice"), 3500);
+        const toast = document.getElementById("toast");
+        document.getElementById("toastMsg").textContent = message;
+        document.getElementById("toastIcon").textContent =
+          type === "ok" ? "✅" : "❌";
+        toast.className = `toast ${type} show`;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => {
+          toast.className = "toast";
+        }, 3200);
       }
 
       function normalizeProducts(payload) {
@@ -155,57 +764,96 @@
         return [];
       }
 
-      function productCategory(product) {
-        return (
-          product.category_name ||
-          product.item_type ||
-          product.category ||
-          "Khác"
-        );
+      function productCategory(p) {
+        return p.category_name || p.item_type || p.category || "Khác";
       }
 
-      function productDescription(product) {
-        if (product.description) return product.description;
-        if (product.details && typeof product.details === "object")
-          return Object.entries(product.details)
+      function productDescription(p) {
+        if (p.description) return p.description;
+        if (p.details && typeof p.details === "object")
+          return Object.entries(p.details)
             .map(([k, v]) => `${k}: ${v}`)
             .join(", ");
-        if (
-          product.product_details &&
-          typeof product.product_details === "object"
-        )
-          return Object.entries(product.product_details)
+        if (p.product_details && typeof p.product_details === "object")
+          return Object.entries(p.product_details)
             .map(([k, v]) => `${k}: ${v}`)
             .join(", ");
-        return "Chưa có mô tả";
+        return "";
       }
 
-      function productId(product) {
-        return Number(product.id || product.product_id || product.item_id || 0);
+      function productId(p) {
+        return Number(p.id || p.product_id || p.item_id || 0);
       }
 
-      function productImage(product) {
-        const id = productId(product);
+      function productImage(p) {
+        const id = productId(p);
         const matched = id
-          ? allProducts.find((p) => productId(p) === id)
+          ? allProducts.find((x) => productId(x) === id)
           : null;
-        return product.image || product.product_image || matched?.image || "";
+        return p.image || p.product_image || matched?.image || "";
       }
 
-      function productStock(product) {
-        const id = productId(product);
+      function productStock(p) {
+        const id = productId(p);
         const matched = id
-          ? allProducts.find((p) => productId(p) === id)
+          ? allProducts.find((x) => productId(x) === id)
           : null;
-        return Number(product.stock ?? matched?.stock ?? 0);
+        return Number(p.stock ?? matched?.stock ?? 0);
       }
 
-      function productPrice(product) {
-        const id = productId(product);
+      function productPrice(p) {
+        const id = productId(p);
         const matched = id
-          ? allProducts.find((p) => productId(p) === id)
+          ? allProducts.find((x) => productId(x) === id)
           : null;
-        return Number(product.price ?? matched?.price ?? 0);
+        return Number(p.price ?? matched?.price ?? 0);
+      }
+
+      function stockPill(stock) {
+        if (stock > 10)
+          return `<span class="stock-pill high">✓ ${stock} còn</span>`;
+        if (stock > 0)
+          return `<span class="stock-pill low">⚡ Còn ${stock}</span>`;
+        return `<span class="stock-pill out">Hết hàng</span>`;
+      }
+
+      function productCardHTML(p, isAI = false) {
+        const id = productId(p);
+        const name = p.name || p.product_name || `Sản phẩm #${id}`;
+        const img = productImage(p);
+        const stock = productStock(p);
+        const price = productPrice(p);
+        const cat = productCategory(p);
+        const desc = productDescription(p);
+        const reason = p.reason || "";
+
+        return `
+        <article class="prod-card" onclick="viewProduct(${id})">
+            <div class="prod-thumb">
+                ${
+                  img
+                    ? `<img src="${esc(img)}" alt="${esc(name)}" loading="lazy">`
+                    : `<span class="prod-thumb-letter">${esc(name.charAt(0).toUpperCase())}</span>`
+                }
+                ${isAI ? `<div class="prod-badge-overlay"><span class="ai-badge">✨ AI</span></div>` : ""}
+            </div>
+            <div class="prod-body">
+                <div class="prod-cat">${esc(cat)}</div>
+                <div class="prod-name">${esc(name)}</div>
+                ${desc ? `<div class="prod-desc">${esc(desc)}</div>` : ""}
+                ${reason ? `<div class="prod-reason">💡 ${esc(reason)}</div>` : ""}
+            </div>
+            <div class="prod-footer">
+                <span class="prod-price">${money(price)}</span>
+                ${stockPill(stock)}
+            </div>
+            <div class="prod-actions" onclick="event.stopPropagation()">
+                <button class="btn-detail" onclick="viewProduct(${id})">Chi tiết</button>
+                <button class="btn-add" ${!id || stock <= 0 ? "disabled" : ""} onclick="addToCart(${id})">
+                    ${stock > 0 ? "＋ Giỏ hàng" : "Hết hàng"}
+                </button>
+            </div>
+        </article>`;
       }
 
       async function loadProducts() {
@@ -213,59 +861,41 @@
           const res = await fetch(`${API_BASE}/products/`);
           const payload = await res.json();
           allProducts = normalizeProducts(payload);
+          document.getElementById("heroTotal").textContent = allProducts.length;
+          document.getElementById("heroCats").textContent = new Set(
+            allProducts.map(productCategory),
+          ).size;
           renderCategories();
           renderProducts(allProducts);
-        } catch (error) {
+        } catch {
           document.getElementById("productsGrid").innerHTML =
-            '<div class="empty">Không tải được sản phẩm.</div>';
-          showNotice("Không thể kết nối API sản phẩm.", "bad");
+            `<div class="grid-empty"><div class="empty-icon">⚠️</div><p>Không tải được sản phẩm.</p></div>`;
         }
       }
 
       function renderCategories() {
         const select = document.getElementById("categorySelect");
         const current = select.value;
-        const categories = [
+        const cats = [
           ...new Set(allProducts.map(productCategory).filter(Boolean)),
         ].sort();
         select.innerHTML =
           '<option value="">Tất cả danh mục</option>' +
-          categories
-            .map((cat) => `<option value="${esc(cat)}">${esc(cat)}</option>`)
+          cats
+            .map((c) => `<option value="${esc(c)}">${esc(c)}</option>`)
             .join("");
         select.value = current;
       }
 
-      function renderProducts(products) {
+      function renderProducts(list) {
         const grid = document.getElementById("productsGrid");
-        if (!products.length) {
-          grid.innerHTML =
-            '<div class="empty">Không có sản phẩm phù hợp.</div>';
+        document.getElementById("productCount").textContent =
+          `${list.length} sản phẩm`;
+        if (!list.length) {
+          grid.innerHTML = `<div class="grid-empty"><div class="empty-icon">🔍</div><p>Không tìm thấy sản phẩm phù hợp.</p></div>`;
           return;
         }
-        grid.innerHTML = products
-          .map((p) => {
-            const stock = Number(p.stock || 0);
-            const stockClass =
-              stock > 10 ? "badge-ok" : stock > 0 ? "badge-warn" : "badge-bad";
-            return `
-                    <article class="card">
-                        <div class="product-media">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}">` : esc((p.name || "P").slice(0, 1).toUpperCase())}</div>
-                        <div class="card-body">
-                            <h3 class="card-title">${esc(p.name || `Sản phẩm #${p.id}`)}</h3>
-                            <p class="muted">${esc(productCategory(p))}</p>
-                            <p class="price">${money(p.price)}</p>
-                            <p class="muted">${esc(productDescription(p))}</p>
-                            <span class="badge ${stockClass}">${stock > 0 ? `${stock} trong kho` : "Hết hàng"}</span>
-                            <div class="actions">
-                                <button class="btn btn-small" onclick="viewProduct(${Number(p.id)})">Chi tiết</button>
-                                <button class="btn btn-primary btn-small" ${stock <= 0 ? "disabled" : ""} onclick="addToCart(${Number(p.id)})">Thêm giỏ</button>
-                            </div>
-                        </div>
-                    </article>
-                `;
-          })
-          .join("");
+        grid.innerHTML = list.map((p) => productCardHTML(p, false)).join("");
       }
 
       function applyFilters() {
@@ -287,41 +917,39 @@
           ).catch(() => {});
       }
 
-      function viewProduct(productId) {
-        if (!productId) return;
+      function viewProduct(id) {
+        if (!id) return;
         fetch(`${API_BASE}/customer/activities/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             customer_id: customerId,
-            product_id: productId,
+            product_id: id,
             action: "click",
           }),
         }).catch(() => {});
-        window.location.href = `/ui/customer/product/${productId}/`;
+        window.location.href = `/ui/customer/product/${id}/`;
       }
 
-      async function addToCart(productId) {
+      async function addToCart(id) {
         try {
           const res = await fetch(`${API_BASE}/customer/cart-items/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               customer_id: customerId,
-              product_id: productId,
+              product_id: id,
               quantity: 1,
             }),
           });
-          if (!res.ok) throw new Error("add failed");
-          showNotice("Đã thêm sản phẩm vào giỏ hàng.");
-        } catch (error) {
-          showNotice("Không thể thêm sản phẩm vào giỏ hàng.", "bad");
+          if (!res.ok) throw new Error();
+          showNotice("Đã thêm vào giỏ hàng! 🛒");
+        } catch {
+          showNotice("Không thể thêm vào giỏ hàng.", "bad");
         }
       }
 
       async function loadRecommendations() {
-        const box = document.getElementById("recommendations");
-        box.innerHTML = '<div class="empty">Đang tải gợi ý...</div>';
         try {
           const res = await fetch(
             `${API_BASE}/ai/recommendations/${customerId}/?limit=6`,
@@ -331,47 +959,21 @@
             payload.recommendations || payload.products || payload,
           );
           renderRecommendations(items);
-        } catch (error) {
-          box.innerHTML = '<div class="empty">AI service chưa sẵn sàng.</div>';
+        } catch {
+          document.getElementById("recommendations").innerHTML =
+            `<div class="grid-empty"><div class="empty-icon">🤖</div><p>AI service chưa sẵn sàng.</p></div>`;
         }
       }
 
       function renderRecommendations(items) {
         const box = document.getElementById("recommendations");
         if (!items.length) {
-          box.innerHTML =
-            '<div class="empty">Chưa có gợi ý cho tài khoản này.</div>';
+          box.innerHTML = `<div class="grid-empty"><div class="empty-icon">✨</div><p>Chưa có gợi ý cho tài khoản này.</p></div>`;
           return;
         }
         box.innerHTML = items
           .slice(0, 6)
-          .map((item) => {
-            const id = productId(item);
-            const name =
-              item.name ||
-              item.product_name ||
-              `Sản phẩm #${item.product_id || item.id}`;
-            const image = productImage(item);
-            const stock = productStock(item);
-            const price = productPrice(item);
-            const stockClass =
-              stock > 10 ? "badge-ok" : stock > 0 ? "badge-warn" : "badge-bad";
-            return `
-                    <article class="card">
-                        <div class="product-media">${image ? `<img src="${esc(image)}" alt="${esc(name)}">` : esc((name || "G").slice(0, 1).toUpperCase())}</div>
-                        <div class="card-body">
-                            <h3 class="card-title">${esc(name)}</h3>
-                            <p class="muted">${esc(item.reason || item.category_name || item.category || "")}</p>
-                            <p class="price">${money(price)}</p>
-                            <span class="badge ${stockClass}">${stock > 0 ? `${stock} trong kho` : "Hết hàng"}</span>
-                            <div class="actions">
-                                <button class="btn btn-small" ${!id ? "disabled" : ""} onclick="viewProduct(${id})">Chi tiết</button>
-                                <button class="btn btn-primary btn-small" ${!id || stock <= 0 ? "disabled" : ""} onclick="addToCart(${id})">Thêm giỏ</button>
-                            </div>
-                        </div>
-                    </article>
-                `;
-          })
+          .map((p) => productCardHTML(p, true))
           .join("");
       }
 
@@ -393,7 +995,7 @@
         if (!message) return;
         document.getElementById("chatMessage").value = "";
         appendChat(message, "user");
-        appendChat("Đang hỏi AI...", "bot pending");
+        appendChat("Đang hỏi AI…", "bot pending");
         try {
           const res = await fetch(`${API_BASE}/ai/chat/`, {
             method: "POST",
@@ -401,31 +1003,29 @@
             body: JSON.stringify({ message, customer_id: customerId }),
           });
           const payload = await res.json();
-          const pending = document.querySelector(".chat-bubble.pending");
-          if (pending) pending.remove();
+          document.querySelector(".chat-bubble.pending")?.remove();
           appendChat(
             payload.answer ||
               payload.response ||
               payload.message ||
-              "AI đã phản hồi nhưng không có nội dung hiển thị.",
+              "AI đã phản hồi nhưng không có nội dung.",
             "bot",
           );
-        } catch (error) {
-          const pending = document.querySelector(".chat-bubble.pending");
-          if (pending) pending.remove();
+        } catch {
+          document.querySelector(".chat-bubble.pending")?.remove();
           appendChat("AI service chưa sẵn sàng.", "bot");
         }
       }
 
       document
         .getElementById("searchInput")
-        .addEventListener("keydown", (event) => {
-          if (event.key === "Enter") applyFilters();
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") applyFilters();
         });
       document
         .getElementById("chatMessage")
-        .addEventListener("keydown", (event) => {
-          if (event.key === "Enter") sendChat();
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") sendChat();
         });
       document
         .getElementById("categorySelect")
